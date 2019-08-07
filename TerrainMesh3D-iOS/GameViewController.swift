@@ -10,8 +10,11 @@ import UIKit
 import QuartzCore
 import SceneKit
 
-class GameViewController: UIViewController {
+class GameViewController: UIViewController, UIGestureRecognizerDelegate {
 
+    var presetPanRecognizer : UIPanGestureRecognizer!
+    var presetPinchRecognizer : UIPinchGestureRecognizer!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -67,8 +70,19 @@ class GameViewController: UIViewController {
         scnView.backgroundColor = UIColor.black
         
         // add a tap gesture recognizer
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
-        scnView.addGestureRecognizer(tapGesture)
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
+        panGesture.delegate = self
+        
+        for recognizer in scnView.gestureRecognizers! {
+            if (recognizer.isKind(of: UIPanGestureRecognizer.self)) {
+                presetPanRecognizer = recognizer as! UIPanGestureRecognizer
+            
+            } else if (recognizer.isKind(of: UIPinchGestureRecognizer.self)) {
+                presetPinchRecognizer = recognizer as! UIPinchGestureRecognizer
+            }
+        }
+        
+        scnView.addGestureRecognizer(panGesture)
     }
     
     func configureDefalutLighting() {
@@ -90,7 +104,10 @@ class GameViewController: UIViewController {
     }
     
     @objc
-    func handleTap(_ gestureRecognize: UIGestureRecognizer) {
+    func handlePan(_ gestureRecognize: UIGestureRecognizer) {
+        guard presetPanRecognizer.state != .changed else { return }
+        guard presetPinchRecognizer.state != .changed else { return }
+        
         // retrieve the SCNView
         let scnView = self.view as! SCNView
         
@@ -102,9 +119,22 @@ class GameViewController: UIViewController {
             // retrieved the first clicked object
             let result = hitResults[0]
             
-            // get its material
-            let material = result.node.geometry!.firstMaterial!
+            let node = result.node
             
+            if (node.isKind(of: TerrainMesh.self)) {
+                let mesh = node as! TerrainMesh
+                let meshSize = Float(mesh.sideLength)
+                
+                let relativeLocation = CGPoint(x: CGFloat(result.localCoordinates.x / meshSize), y: CGFloat(result.localCoordinates.y / meshSize))
+                mesh.deformTerrainAt(point: relativeLocation, brushRadius: 0.25, intensity: 0.025)
+                
+                if (presetPanRecognizer.state != .changed) {
+                    presetPanRecognizer.state = .cancelled
+                }
+                if (presetPinchRecognizer.state != .changed) {
+                    presetPinchRecognizer.state = .cancelled
+                }
+            }
         }
     }
     
@@ -124,4 +154,8 @@ class GameViewController: UIViewController {
         }
     }
 
+    // UIGestureRecognizerDelegate
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        return true
+    }
 }

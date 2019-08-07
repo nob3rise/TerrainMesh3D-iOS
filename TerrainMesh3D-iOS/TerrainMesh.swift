@@ -17,7 +17,7 @@ class TerrainMesh : SCNNode {
     
     private var vertexHeightComputationBlock : ((Int, Int) -> Double)?
     private let verticesPerSide : Int
-    private let sideLength : Double
+    let sideLength : Double
     
     init(verticesPerside : Int, sideLength : Double, vertexHeight : ((Int, Int) -> Double)?) {
 //        guard verticesPerside >= 2 else { return nil }
