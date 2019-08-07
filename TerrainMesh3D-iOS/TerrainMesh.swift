@@ -74,7 +74,6 @@ class TerrainMesh : SCNNode {
             }
             
             self.meshVertices[i] = SCNVector3Make(Float(x), Float(y), Float(vertexZDepth));
-//            print("\(x), \(y), \(vertexZDepth)")
             
             /*  Create normals for each vertex */
             self.normals[i] = SCNVector3Make(0, 0, 1)
@@ -83,7 +82,6 @@ class TerrainMesh : SCNNode {
             let ti = i * 2
             self.textureCoordinates[ti] = Float(ixf)
             self.textureCoordinates[ti+1] = Float(iyf)
-//            print("\(textureCoordinates[i])");
         }
 
         for i in stride(from: 0, to: totalTriangles, by: 2) {
@@ -108,7 +106,6 @@ class TerrainMesh : SCNNode {
             self.triangleIndices[i1+4] = Int32(bottomleftIndex)
             self.triangleIndices[i1+5] = Int32(bottomrightIndex)
             
-//            print("\(triangleIndices[i1]), \(triangleIndices[i1+1]), \(triangleIndices[i1+2]), \(triangleIndices[i1+3]), \(triangleIndices[i1+4]), \(triangleIndices[i1+5])")
         }
     }
     
@@ -138,7 +135,6 @@ class TerrainMesh : SCNNode {
         let normalSource = SCNGeometrySource(normals: normals)
         
         let indexData = NSData(bytes: UnsafeRawPointer(triangleIndices), length: MemoryLayout<Int32>.size * totalTriangles * 3)
-//        let indexData = withUnsafeBytes(of: triangleIndices) { Data($0) }
 
         
         let element = SCNGeometryElement(data: indexData as Data, primitiveType: .triangles, primitiveCount: totalTriangles, bytesPerIndex: MemoryLayout<Int32>.size)
