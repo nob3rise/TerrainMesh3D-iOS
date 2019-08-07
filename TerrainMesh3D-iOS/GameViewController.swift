@@ -49,10 +49,8 @@ class GameViewController: UIViewController, UIGestureRecognizerDelegate {
         
         SCNTransaction.begin()
         SCNTransaction.animationDuration = 2.2
-        mesh.rotation = SCNVector4Make(1.0, 0, 0, -.pi/4)
-        mesh.position = SCNVector3Make(0.0, 2.0, 0.0)
+        mesh.rotation = SCNVector4Make(1.0, 0, 0, -.pi/2)
         SCNTransaction.commit()
-        
         
         
         // retrieve the SCNView
@@ -126,7 +124,10 @@ class GameViewController: UIViewController, UIGestureRecognizerDelegate {
                 let meshSize = Float(mesh.sideLength)
                 
                 let relativeLocation = CGPoint(x: CGFloat(result.localCoordinates.x / meshSize), y: CGFloat(result.localCoordinates.y / meshSize))
-                mesh.deformTerrainAt(point: relativeLocation, brushRadius: 0.25, intensity: 0.025)
+                
+                let deformDirection = (scnView.defaultCameraController.pointOfView?.position.y)! >= Float(0.0) ? 1.0 : -1.0
+                
+                mesh.deformTerrainAt(point: relativeLocation, brushRadius: 0.25, intensity: 0.025 * Double(deformDirection))
                 
                 if (presetPanRecognizer.state != .changed) {
                     presetPanRecognizer.state = .cancelled
