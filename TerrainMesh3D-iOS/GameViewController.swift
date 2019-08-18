@@ -35,8 +35,8 @@ class GameViewController: UIViewController, UIGestureRecognizerDelegate {
         configureDefalutLighting()
         
         let kMeshResolution = 40
-        let sideLength : Double = 10
-        let mesh = TerrainMesh(verticesPerside: kMeshResolution, sideLength: sideLength, vertexHeight: nil)
+        let sideLength : Float = 10
+        let mesh = TerrainMesh(verticesPerside: kMeshResolution, width: sideLength, height: sideLength, vertexHeight: nil)
         
         
         let mat = SCNMaterial()
@@ -73,10 +73,10 @@ class GameViewController: UIViewController, UIGestureRecognizerDelegate {
         
         for recognizer in scnView.gestureRecognizers! {
             if (recognizer.isKind(of: UIPanGestureRecognizer.self)) {
-                presetPanRecognizer = recognizer as! UIPanGestureRecognizer
+                presetPanRecognizer = recognizer as? UIPanGestureRecognizer
             
             } else if (recognizer.isKind(of: UIPinchGestureRecognizer.self)) {
-                presetPinchRecognizer = recognizer as! UIPinchGestureRecognizer
+                presetPinchRecognizer = recognizer as? UIPinchGestureRecognizer
             }
         }
         
@@ -121,13 +121,13 @@ class GameViewController: UIViewController, UIGestureRecognizerDelegate {
             
             if (node.isKind(of: TerrainMesh.self)) {
                 let mesh = node as! TerrainMesh
-                let meshSize = Float(mesh.sideLength)
+                let meshSize = mesh.width
                 
                 let relativeLocation = CGPoint(x: CGFloat(result.localCoordinates.x / meshSize), y: CGFloat(result.localCoordinates.y / meshSize))
                 
                 let deformDirection = (scnView.defaultCameraController.pointOfView?.position.y)! >= Float(0.0) ? 1.0 : -1.0
                 
-                mesh.deformTerrainAt(point: relativeLocation, brushRadius: 0.25, intensity: 0.025 * Double(deformDirection))
+                mesh.deformTerrainAt(point: relativeLocation, brushRadius: 0.25, intensity: Float(0.025 * deformDirection))
                 
                 if (presetPanRecognizer.state != .changed) {
                     presetPanRecognizer.state = .cancelled

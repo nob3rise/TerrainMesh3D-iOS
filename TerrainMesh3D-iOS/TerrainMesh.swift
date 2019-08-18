@@ -10,24 +10,27 @@ import Foundation
 import SceneKit
 
 class TerrainMesh : SCNNode {
-    var meshVertices : [SCNVector3]! = nil
-    var normals : [SCNVector3]! = nil
-    var triangleIndices : [Int32]! = nil
-    var textureCoordinates : [Float]! = nil
+    private var meshVertices : [SCNVector3]! = nil
+    private var normals : [SCNVector3]! = nil
+    private var triangleIndices : [Int32]! = nil
+    private var textureCoordinates : [Float]! = nil
+    private var deformHistory : [(CGPoint, Float, Float)] = []
     
-    private var vertexHeightComputationBlock : ((Int, Int) -> Double)?
+    private var vertexHeightComputationBlock : ((Int, Int) -> Float)?
     private let verticesPerSide : Int
-    let sideLength : Double
+    var width : Float
+    var height : Float
     
-    init(verticesPerside : Int, sideLength : Double, vertexHeight : ((Int, Int) -> Double)?) {
-//        guard verticesPerside >= 2 else { return nil }
+    init(verticesPerside : Int, width : Float, height : Float, vertexHeight : ((Int, Int) -> Float)?) {
+        //        guard verticesPerside >= 2 else { return nil }
         
         self.verticesPerSide = verticesPerside
-        self.sideLength = sideLength
+        self.width = width
+        self.height = height
         self.vertexHeightComputationBlock = vertexHeight
         
         super.init()
-
+        
         self.allocateDataBuffers()
         self.populateDataBuffersWithStartingValues()
         self.configureGeometry()
@@ -60,14 +63,14 @@ class TerrainMesh : SCNNode {
             let ix = i % verticesPerSide
             let iy = i / verticesPerSide
             
-            let ixf = Double(ix) / Double(verticesPerSide - 1)
-            let iyf = Double(iy) / Double(verticesPerSide - 1)
-            let x = ixf * Double(sideLength);
-            let y = iyf * Double(sideLength);
+            let ixf = Float(ix) / Float(verticesPerSide - 1)
+            let iyf = Float(iy) / Float(verticesPerSide - 1)
+            let x = ixf * Float(width);
+            let y = iyf * Float(height);
             
             /*  Create vertices */
             
-            var vertexZDepth = 0.0
+            var vertexZDepth : Float = 0.0
             
             if let vartexHeghtComputation = vertexHeightComputationBlock {
                 vertexZDepth = vartexHeghtComputation(ix, iy)
@@ -81,9 +84,9 @@ class TerrainMesh : SCNNode {
             /*  Create texture coords (an X,Y pair for each vertex) */
             let ti = i * 2
             self.textureCoordinates[ti] = Float(ixf)
-            self.textureCoordinates[ti+1] = Float(iyf)
+            self.textureCoordinates[ti+1] = 1.0 - Float(iyf)
         }
-
+        
         for i in stride(from: 0, to: totalTriangles, by: 2) {
             /*  Define the triangles that make up the terrain mesh */
             let squareIndex = (i / 2)
@@ -135,12 +138,12 @@ class TerrainMesh : SCNNode {
         let normalSource = SCNGeometrySource(normals: normals)
         
         let indexData = NSData(bytes: UnsafeRawPointer(triangleIndices), length: MemoryLayout<Int32>.size * totalTriangles * 3)
-
+        
         
         let element = SCNGeometryElement(data: indexData as Data, primitiveType: .triangles, primitiveCount: totalTriangles, bytesPerIndex: MemoryLayout<Int32>.size)
         
         let geometry = SCNGeometry(sources: [vertexSource, normalSource, textureSource], elements: [element])
-
+        
         if let materials = originalMaterials {
             geometry.materials = materials
         }
@@ -148,8 +151,8 @@ class TerrainMesh : SCNNode {
         
         self.geometry = geometry
     }
-
-    func updateGeometry(vertexComputationBlock: ((Int, Int) -> Double)?) {
+    
+    func updateGeometry(vertexComputationBlock: ((Int, Int) -> Float)?) {
         if let computationBlock = vertexComputationBlock {
             self.vertexHeightComputationBlock = computationBlock
             self.populateDataBuffersWithStartingValues()
@@ -157,16 +160,21 @@ class TerrainMesh : SCNNode {
         }
     }
     
-    func deformTerrainAt(point: CGPoint, brushRadius: Double, intensity: Double) {
-        let radiusInIndices = brushRadius * Double(verticesPerSide)
-        let vx = Double(CGFloat(verticesPerSide) * point.x)
-        let vy = Double(CGFloat(verticesPerSide) * point.y)
+    func deformTerrainAt(point: CGPoint, brushRadius: Float, intensity: Float) {
+        deformTerrainAtWithoutHistory(point: point, brushRadius: brushRadius, intensity: intensity)
+        deformHistory.append((point, brushRadius, intensity))
+    }
+    
+    private func deformTerrainAtWithoutHistory(point: CGPoint, brushRadius: Float, intensity: Float) {
+        let radiusInIndices = brushRadius * Float(verticesPerSide)
+        let vx = Float(CGFloat(verticesPerSide) * point.x)
+        let vy = Float(CGFloat(verticesPerSide) * point.y)
         
         for y in 0 ..< verticesPerSide {
             
             for x in 0 ..< verticesPerSide {
-                let xDelta = vx - Double(x)
-                let yDelta = vy - Double(y)
+                let xDelta = vx - Float(x)
+                let yDelta = vy - Float(y)
                 let dist = sqrt((xDelta * xDelta) + (yDelta * yDelta))
                 
                 if( dist < radiusInIndices) {
